@@ -1,5 +1,5 @@
 /**
- * copyright 2002 Bryce "Zooko" Wilcox-O'Hearn
+ * copyright 2002, 2003 Bryce "Zooko" Wilcox-O'Hearn
  * mailto:zooko@zooko.com
  *
  * See the end of this file for the free software, open source license (BSD-style).
@@ -7,13 +7,13 @@
  * About this library:
  *
  * This library defines a simple struct with a length and a pointer to byte.  
- * You can use it in place of, or along with, traditional C null-terminated 
+ * You can use it in place of, or alongside, traditional C null-terminated 
  * char*'s and the <string.h> functions.  The advantages of "lengthed" strings 
  * over null-terminated strings are well known: they can store binary data, they 
- * can sometimes be faster, and it can sometimes be easier to avoid buffer 
- * overflow errors when using a library like this one.  (For example, see 
- * `zcat()', which is faster and safer than <string.h>'s `strcat()' or 
- * `strncat()', and even than most alternatives such as OpenBSD's `strlcat()'.)
+ * can sometimes be faster, and they can often be safer with regard to buffer 
+ * overflow errors.  For example, see zcat(), which is safer than <string.h>'s 
+ * strcat() or strncat(), and even than alternatives such as OpenBSD's 
+ * strlcat().
  *
  *
  * About macros:
@@ -38,12 +38,13 @@
  * The macro versions also omit the assertion checking that the function 
  * versions have.  In general, you probably ought to just use the function 
  * version until you have identified a particular performance hotspot that could 
- * benefit from another couple of CPU cycles of speed, and then use the macro 
+ * benefit from saving another couple of CPU cycles, and then use the macro 
  * version there, being careful to avoid side-effects in the argument 
  * expressions of the macro.
  *
- * (By the way, if the NDEBUG flag is set, then libzstr will use the function 
- * versions even if you specified the all-uppercase name of the macro version.)
+ * (By the way, if the NDEBUG flag is unset, then libzstr will use the 
+ * function versions even if you specified the all-uppercase name of the macro 
+ * version.)
  *
  *
  * About memory exhaustion:
@@ -62,18 +63,18 @@
 #ifndef _INCL_zstr_h
 #define _INCL_zstr_h
 
-static char const* const zstr_h_cvsid = "$Id: zstr.h,v 1.2 2002/10/27 20:18:03 zooko Exp $";
+static char const* const zstr_h_cvsid = "$Id: zstr.h,v 1.3 2003/08/09 13:20:48 zooko Exp $";
 
 static int const zstr_vermaj = 0;
-static int const zstr_vermin = 2;
-static int const zstr_vermicro = 1;
-static char const* const zstr_vernum = "0.2.1";
+static int const zstr_vermin = 9;
+static int const zstr_vermicro = 0;
+static char const* const zstr_vernum = "0.9.0";
 
 #include <stdlib.h>
 #include <string.h>
 
 #define Z_EXHAUST_EXIT
-#include "zutil.h" /* XXX add docs about where to get libzutil */
+#include "zutil.h" /* http://sf.net/projects/libzutil */
 
 typedef struct {
 	size_t len; /* the length of the string (not counting the null-terminating character) */
@@ -90,89 +91,107 @@ typedef struct {
 /**
  * Add z2 onto the end of z1, reallocating z1 to be big enough.
  *
- * @param z1 this will be realloc'ed which means you cannot use it after calling `zcat()'!  Use the return value instead.
+ * @param z1 this will be realloc'ed which means you cannot use it after 
+ *     calling zcat()!  Use the return value instead.
  * @param z2 the string to be appended onto the end of z1
  *
- * @return the new `z1'
+ * @return the new z1
  *
  * On  malloc failure (if not Z_EXHAUST_EXIT) then it will return a zstr with 
- * its `.buf' member set to NULL and its `.len' member set to 0.  In that case 
- * z1 is completely unchanged (and can safely be used as if this function had 
- * not been called).
+ * its .buf member set to NULL and its .len member set to 0.  In that case z1 
+ * is completely unchanged (and can safely be used as if this function had not 
+ * been called).
  */
 zstr
-zcat(zstr z1, const czstr z2);
+zcat(zstr z1, czstr z2);
+
+/**
+ * Copy z2 and return copy in newly allocated zstr..
+ *
+ * @param z1
+ *
+ * @return the new zstr
+ *
+ * On  malloc failure (if not Z_EXHAUST_EXIT) then it will return a zstr with 
+ * its .buf member set to NULL and its .len member set to 0.
+ */
+zstr
+zdup(czstr z1);
 
 /**
  * @return the length of the zstr, in bytes, not counting the null terminating 
  *     character.
  *
- * Actually I recommend that you just write `z.len' yourself, which is faster 
- * and IMO clearer.
+ * Actually I recommend that you just write z.len yourself, which is faster 
+ * and in my opinion clearer.
  */
 size_t
-zstrlen(const czstr z);
+zstrlen(czstr z);
 
 /**
  * @return 1 if the strings are identical, else 0
  */
 int
-z_eq(const czstr z1, const czstr z2);
+z_eq(czstr z1, czstr z2);
 int
-Z_EQ(const czstr z1, const czstr z2);
+Z_EQ(czstr z1, czstr z2);
 
 /**
- * @return <0 if z1<z2, 0 if z1==z2, or >0 if z1>z2 (same as `strcmp()')
+ * @return <0 if z1<z2, 0 if z1==z2, or >0 if z1>z2 (same as strcmp())
  */
 int
-z_cmp(const czstr z1, const czstr z2);
+z_cmp(czstr z1, czstr z2);
 
 /**
  * The human-readable representation is: if a byte is a printable ASCII character other than `\', 
- * then just show it, if it is a '\', then show double backslash: '\\', else the byte is not a 
- * printable ASCII character, so show its value in lowercase hexadecimal notation e.g. `\xFF'.
+ * then just show it.  If it is a '\', then show double backslash: '\\'.  Else 
+ * the byte is not a printable ASCII character, so show its value in lowercase 
+ * hexadecimal notation with a preceding backslash, e.g. `\xFF'.
+ * (This is like the Python human-readable representation.)
  *
- * @return a newly allocated zstr containing a human-readable representation of z.
+ * @return a newly allocated zstr containing a human-readable representation 
+ *     of z.
  */
 zstr
-repr(const czstr z);
+repr(czstr z);
 
 /**
- * @return a zstr pointing to `cs'.
+ * @return a zstr pointing to cs.
  *
- * @precondition `cs' must not be NULL.
+ * @precondition cs must not be NULL.
  */
 zstr
-cs_as_z(char*const cs);
+cs_as_z(char* cs);
 zstr
-CS_AS_Z(char*const cs);
+CS_AS_Z(char* cs);
 
 /**
- * (You should use `cs_as_cz()' instead of `cs_as_z()' if the argument is a string literal.)
+ * (You should use cs_as_cz() instead of cs_as_z() if the argument is a string 
+ * literal.)
  *
- * @return a czstr pointing to `cs'.
+ * @return a czstr pointing to cs.
  *
- * @precondition `cs' must not be NULL.
+ * @precondition cs must not be NULL.
  */
 czstr
-cs_as_cz(const char*const cs);
+cs_as_cz(const char* cs);
 czstr
-CS_AS_CZ(const char*const cs);
+CS_AS_CZ(const char* cs);
 
 /**
- * @return a czstr of `z' (shallow copy).
+ * @return a czstr of z (shallow copy).
  */
 czstr
-cz(const zstr z);
+cz(zstr z);
 
 /**
- * Allocates space, copies the contents of `cs' and returns a zstr pointing to 
+ * Allocates space, copies the contents of cs and returns a zstr pointing to 
  * the result.
  *
  * On  malloc failure (if not Z_EXHAUST_EXIT) then it will return a zstr with 
- * its `.buf' member set to NULL and its `.len' member set to 0.
+ * its .buf member set to NULL and its .len member set to 0.
  *
- * @precondition `cs' must not be NULL.
+ * @precondition cs must not be NULL.
  */
 zstr 
 new_z_from_cs(const char* cs);
@@ -180,33 +199,34 @@ new_z_from_cs(const char* cs);
 /**
  * Allocates space.
  *
- * On  malloc failure (if not Z_EXHAUST_EXIT) then it will return a "null" zstr 
- * with its `.buf' member set to NULL and its `.len' member set to 0.
+ * On  malloc failure (if not Z_EXHAUST_EXIT) then it will return a zstr with 
+ * its .buf member set to NULL and its .len member set to 0.
  */
 zstr 
-new_z(const size_t len);
+new_z(size_t len);
 
 /**
- * Allocates space, copies the first `len' bytes of `cs' and returns a zstr 
+ * Allocates space, copies the first len bytes of cs and returns a zstr 
  * pointing to the result.
  *
  * On  malloc failure (if not Z_EXHAUST_EXIT) then it will return a zstr with 
- * its `.buf' member set to NULL and its `.len' member set to 0.
+ * its .buf member set to NULL and its .len member set to 0.
  *
- * @precondition `cs' must not be NULL.
- * @precondition `len' must not be 0.
+ * @precondition cs must not be NULL.
+ * @precondition len must not be 0.
  */
 zstr 
-new_z_from_cs_and_len(const char*const cs, size_t len);
+new_z_from_cs_and_len(const char* cs, size_t len);
 
 /**
  * Free the memory used by the zstr.
  *
- * Alternately you could write `free(z.buf)'.
+ * Alternately you could write free(z.buf).
  *
  * @precondition z.buf must not be NULL.: z.buf != NULL
  *
- * (This precondition is here only to help you find memory mismanagement in your code.)
+ * (This precondition is here only to help you find memory mismanagement in 
+ * your code.)
  */
 void
 free_z(zstr z);
@@ -218,18 +238,18 @@ free_z(zstr z);
 #define Z_EQ(z1, z2) (((z1).len==(z2).len)&&(!memcmp((z1).buf, (z2).buf, (z1).len)))
 #define CS_AS_Z(cs) ((zstr){ strlen(cs), cs };)
 #define CS_AS_CZ(cs) ((czstr){ strlen((cs)), (cs) };)
-/* Please avert your gaze.  We are now going to trick the compiler into converting a zstr directly into a czstr by dint of casting into a union and then taking its `czstr' element. */
 #define free_z(z) (free((void*)(z).buf))
 #endif /* #ifdef NDEBUG */
 
 #endif /* #ifndef _INCL_zstr_h */
 
 #if 0 /* Whoops this doesn't compile with gcc 2.95!  --Zooko 2002-10-27 */
+/* Please avert your gaze.  We are now going to trick the compiler into converting a zstr directly into a czstr by dint of casting into a union and then taking its czstr element. */
 #define cz(z) ((union { zstr zs; czstr czs; }){ (z) }.czs)
 #endif /* Whoops this doesn't compile with gcc 2.95!  --Zooko 2002-10-27 */
 
 /**
- * Copyright (c) 2002 Bryce "Zooko" Wilcox-O'Hearn
+ * Copyright (c) 2002, 2003 Bryce "Zooko" Wilcox-O'Hearn
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software to deal in this software without restriction, including
  * without limitation the rights to use, copy, modify, merge, publish,

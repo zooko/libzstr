@@ -23,7 +23,12 @@ LIB=$(LIBPREFIX)$(NAME)$(LIBSUFFIX)
 
 all: $(LIB) $(TEST)
 
-include $(SRCS:%.c=%.d)
+# .d auto-dependency files
+ifneq ($(findstring clean,$(MAKECMDGOALS)),clean)
+ifneq (,$(SRCS:%.c=%.d))
+-include $(SRCS:%.c=%.d)
+endif
+endif
 
 %.d: %.c
 	@echo remaking $@
@@ -39,6 +44,6 @@ $(TEST): $(TESTOBJS) $(LIB)
 	$(CC) $+ -o $@ $(LDFLAGS)
 
 clean:
-	-rm $(LIB) $(OBJS) $(TEST) $(TESTOBJS) *.d
+	-rm $(LIB) $(OBJS) $(TEST) $(TESTOBJS) *.d 2>/dev/null
 
 .PHONY: clean all

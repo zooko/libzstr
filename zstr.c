@@ -15,14 +15,40 @@ zcat(zstr z1, const czstr z2)
 	if (z2.len == 0) {
 		return z1;
 	}
-	p = (zbyte*)realloc(z1.buf, z1.len+z2.len);
+	if (z1.buf == NULL) {
+		assert (z1.len == 0);
+		p = (zbyte*)malloc(z2.len);
+	} else {
+		p = (zbyte*)realloc(z1.buf, z1.len+z2.len);
+	}
 #ifdef Z_EXHAUST_EXIT
 	CHECKMALLOCEXIT(p);
 #else
-	return (zstr){ 0, NULL };
+	if (p == NULL) {
+		return (zstr){ 0, NULL };
+	}
 #endif
 	memcpy(p+z1.len, z2.buf, z2.len+1);
 	return (zstr){ z1.len+z2.len, p };
+}
+
+zstr
+zdup(const czstr z1)
+{
+	zstr res;
+	if ((z2.len == 0) || (z2.buf == NULL)) {
+		return { 0, NULL };
+	}
+	res.buf = (zbyte*)malloc(z1.len);
+#ifdef Z_EXHAUST_EXIT
+	CHECKMALLOCEXIT(res.buf);
+#else
+	if (p == NULL) {
+		return (zstr){ 0, NULL };
+	}
+#endif
+	memcpy(res.buf, z1.buf, z1.len);
+	return res;
 }
 
 #undef zstrlen
