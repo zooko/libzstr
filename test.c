@@ -53,14 +53,14 @@ int test_repr()
 	const czstr a = cs_as_cz("\\\\k");
 	#endif
 
-	assert (!strcmp(rz.buf, "k"));
+	assert (!strcmp((const char*)rz.buf, "k"));
 
 	z = cs_as_cz("\\k");
 	assert (z.len == 2);
 	rz = cz(repr(z));
 	assert (rz.len == 3);
 	assert (a.len == 3);
-	assert (!strcmp(rz.buf, "\\\\k"));
+	assert (!strcmp((const char*)rz.buf, "\\\\k"));
 	assert (zeq(rz, a));
 
 	z2 = new_z(4);
@@ -70,20 +70,36 @@ int test_repr()
 	z2.buf[3] = 252;
 
 	rz = cz(repr(cz(z2)));
-	assert (!strcmp(rz.buf, "\\x01\\x0ad\\xfc"));
+	assert (!strcmp((const char*)rz.buf, "\\x01\\x0ad\\xfc"));
 
 	z2 = new_z(1);
 	z2.buf[0] = '\0';
 
 	rz = cz(repr(cz(z2)));
-	assert (!strcmp(rz.buf, "\\x00"));
+	assert (!strcmp((const char*)rz.buf, "\\x00"));
 
 	return 0;
 }
 
+/** This test requires manual intervention to provide an appropriate file to read and write. */
+void test_stream()
+{
+	FILE* fp = fopen("/tmp/opsec.p12", "r");
+	FILE* fpo;
+	zstr z1 = z_from_stream(fp);
+	zstr z2;
+	fpo = fopen("/tmp/opsec.p12.out", "w");
+	cz_to_stream(cz(z1), fpo);
+	fflush(fpo);
+	fclose(fpo);
+	z2 = z_from_stream(fopen("/tmp/opsec.p12.out", "r"));
+	assert (zeq(cz(z1), cz(z2)));
+}
+
 int main(int argv, char**argc)
 {
-	/*test_czstr();*/
+	test_czstr();
+	/*test_stream();*/
 	return test_repr();
 }
 

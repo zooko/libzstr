@@ -4,6 +4,8 @@
 #include <string.h>
 #include <assert.h>
 
+#include "moreassert.h"
+
 #include "zstr.h"
 
 /** commonly used functions */
@@ -194,9 +196,10 @@ new_z(const size_t len)
 #ifdef Z_EXHAUST_EXIT
 	CHECKMALLOCEXIT(result.buf);
 #else
-	if (result.buf == NULL)
+	if (result.buf == NULL) {
 		result.len = 0;
 		return result;
+	}
 #endif
 	result.len = len;
 	result.buf[len] = '\0';
@@ -246,3 +249,65 @@ new_z_from_cs_and_len(const char*const cs, const size_t len)
 	return result;
 }
 
+static const size_t BUFINCREMENT = 16384;
+
+zstr 
+z_from_stream(FILE* fp)
+{
+	size_t res;
+	size_t bufsiz;
+	size_t space;
+	zbyte* buf;
+	size_t len = 0;
+
+	assert (fp != NULL); /* @precondition */
+
+	bufsiz = BUFINCREMENT + 1;
+	buf = (zbyte*)malloc(sizeof(zbyte) * bufsiz);
+#ifdef Z_EXHAUST_EXIT
+	CHECKMALLOCEXIT(buf);
+#else
+	if (buf == NULL) {
+		return (zstr){ 0, NULL };
+	}
+#endif
+	while (!feof(fp)) {
+		runtime_assert(!ferror(fp), "file error");
+		space = (bufsiz - 1) - len;
+		if (space < (BUFINCREMENT/2)) {
+			bufsiz += BUFINCREMENT;
+			buf = (zbyte*)realloc(buf, sizeof(zbyte) * bufsiz);
+#ifdef Z_EXHAUST_EXIT
+			CHECKMALLOCEXIT(buf);
+#else
+			if (buf == NULL) {
+				return (zstr){ 0, NULL };
+			}
+#endif
+			space = (bufsiz - 1) - len;
+		}
+		res = fread(buf + len, sizeof(zbyte), space, fp);
+		len += res;
+	}
+	assert(len < bufsiz); /* error internal to this function */
+	buf = (zbyte*)realloc(buf, sizeof(zbyte) * (len+1));
+#ifdef Z_EXHAUST_EXIT
+	CHECKMALLOCEXIT(buf);
+#else
+	if (buf == NULL) {
+		return (zstr){ 0, NULL };
+	}
+#endif
+	buf[len] = '\0';
+	return (zstr){ len, buf };
+}
+
+void 
+cz_to_stream(czstr cz, FILE* fp)
+{
+	size_t res;
+	assert (fp != NULL); /* @precondition */
+
+	res = fwrite(cz.buf, sizeof(zbyte), cz.len, fp);
+	runtime_assert(res == cz.len, "fwrite() failed to completely write the data.");
+}

@@ -63,15 +63,16 @@
 #ifndef _INCL_zstr_h
 #define _INCL_zstr_h
 
-static char const* const zstr_h_cvsid = "$Id: zstr.h,v 1.5 2003/12/14 18:44:53 zooko Exp $";
+static char const* const zstr_h_cvsid = "$Id: zstr.h,v 1.6 2003/12/15 01:11:13 zooko Exp $";
 
 static int const zstr_vermaj = 0;
 static int const zstr_vermin = 9;
-static int const zstr_vermicro = 2;
-static char const* const zstr_vernum = "0.9.2";
+static int const zstr_vermicro = 3;
+static char const* const zstr_vernum = "0.9.3";
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #define Z_EXHAUST_EXIT
 #include "zutil.h" /* http://sf.net/projects/libzutil */
@@ -237,6 +238,26 @@ new_z_from_cs_and_len(const char* cs, size_t len);
  */
 void
 free_z(zstr z);
+
+/**
+ * Read from a stream the into a zstr.  This does nothing with the fp argument 
+ * except call fread(), feof(), and ferror() on it, therefore it reads from 
+ * whereever fp is currently set to the end of fp, and it does not fclose() fp 
+ * after it is done.
+ *
+ * This invokes realloc() multiple times as needed along the way.
+ *
+ * @precondition fp must not be NULL.
+ */
+zstr z_from_stream(FILE* fp);
+
+/**
+ * Write the contents of cz to a stream.  This just calls 
+ * fwrite(cz.buf, sizeof(zbyte), cz.len, fp).
+ *
+ * @precondition fp must not be NULL.
+ */
+void cz_to_stream(czstr cz, FILE* fp);
 
 /*** macro definitions ***/
 
