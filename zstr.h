@@ -63,12 +63,12 @@
 #ifndef _INCL_zstr_h
 #define _INCL_zstr_h
 
-static char const* const zstr_h_cvsid = "$Id: zstr.h,v 1.3 2003/08/09 13:20:48 zooko Exp $";
+static char const* const zstr_h_cvsid = "$Id: zstr.h,v 1.4 2003/12/13 17:56:00 zooko Exp $";
 
 static int const zstr_vermaj = 0;
 static int const zstr_vermin = 9;
-static int const zstr_vermicro = 0;
-static char const* const zstr_vernum = "0.9.0";
+static int const zstr_vermicro = 1;
+static char const* const zstr_vernum = "0.9.1";
 
 #include <stdlib.h>
 #include <string.h>

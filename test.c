@@ -50,9 +50,8 @@ int test_repr()
 	czstr z = cs_as_cz("k");
 	czstr rz = cz(repr(z));
 	#ifndef NDEBUG
-	const czstr a;
+	const czstr a = cs_as_cz("\\\\k");
 	#endif
-
 
 	assert (!strcmp(rz.buf, "k"));
 
@@ -60,9 +59,6 @@ int test_repr()
 	assert (z.len == 2);
 	rz = cz(repr(z));
 	assert (rz.len == 3);
-	#ifndef NDEBUG
-	const czstr a = cs_as_cz("\\\\k");
-	#endif
 	assert (a.len == 3);
 	assert (!strcmp(rz.buf, "\\\\k"));
 	assert (z_eq(rz, a));

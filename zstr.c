@@ -36,8 +36,8 @@ zstr
 zdup(const czstr z1)
 {
 	zstr res;
-	if ((z2.len == 0) || (z2.buf == NULL)) {
-		return { 0, NULL };
+	if ((z1.len == 0) || (z1.buf == NULL)) {
+		return (zstr){ 0, NULL };
 	}
 	res.buf = (zbyte*)malloc(z1.len);
 #ifdef Z_EXHAUST_EXIT
@@ -73,7 +73,7 @@ Z_EQ(const czstr z1, const czstr z2)
 int
 z_cmp(const czstr z1, const czstr z2)
 {
-	int mcr = memcmp(z1.buf, z2.buf, _MIN_UNSAFE(z1.len, z2.len));
+	int mcr = memcmp(z1.buf, z2.buf, MIN(z1.len, z2.len));
 	if (mcr)
 		return mcr;
 	else
@@ -142,6 +142,14 @@ CS_AS_Z(char*const cs)
 {
 	assert (cs != NULL); /* @precondition */
 	return (zstr){ strlen(cs), cs };
+}
+
+#undef CS_AS_CZ
+czstr
+CS_AS_CZ(const char*const cs)
+{
+	assert (cs != NULL); /* @precondition */
+	return (czstr){ strlen(cs), cs };
 }
 
 czstr
