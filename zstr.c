@@ -11,10 +11,11 @@
 zstr
 zcat(zstr z1, const czstr z2)
 {
+	zbyte* p;
 	if (z2.len == 0) {
 		return z1;
 	}
-	zbyte* p = (zbyte*)realloc(z1.buf, z1.len+z2.len);
+	p = (zbyte*)realloc(z1.buf, z1.len+z2.len);
 #ifdef Z_EXHAUST_EXIT
 	CHECKMALLOCEXIT(p);
 #else
@@ -62,13 +63,16 @@ z_cmp(const czstr z1, const czstr z2)
 zstr
 repr(const czstr z)
 {
+	const zbyte*const ze = z.buf+z.len;
+	const zbyte* zp = z.buf;
+	zbyte* resp;
+	zbyte* newp;
+
 	zstr result = new_z(z.len*4);
 	if (result.buf == NULL)
 		return result;
 
-	const zbyte*const ze = z.buf+z.len;
-	const zbyte* zp = z.buf;
-	zbyte* resp = result.buf;
+	resp = result.buf;
 	while (zp < ze) {
 		if (*zp == '\\') {
 			*resp++ = '\\';
@@ -85,7 +89,7 @@ repr(const czstr z)
 	}
 	result.len = resp - result.buf;
 	*resp = '\0';
-	zbyte* newp = (zbyte*)realloc(result.buf, result.len+1);
+	newp = (zbyte*)realloc(result.buf, result.len+1);
 	assert (newp != NULL); /* I don't see how this realloc could have failed! */
 	result.buf = newp;
 	return result;
@@ -148,8 +152,8 @@ new_z(const size_t len)
 zstr
 new_z_from_cs(const char*const cs)
 {
-	assert (cs != NULL); /* @precondition */
 	zstr result;
+	assert (cs != NULL); /* @precondition */
 
 	result.buf = (zbyte*)malloc(result.len+1);
 #ifdef Z_EXHAUST_EXIT
@@ -167,9 +171,9 @@ new_z_from_cs(const char*const cs)
 zstr 
 new_z_from_cs_and_len(const char*const cs, const size_t len)
 {
+	zstr result;
 	assert (cs != NULL); /* @precondition */
 	assert (len != 0); /* @precondition */
-	zstr result;
 
 	result.len = len;
 	result.buf = (zbyte*)malloc(result.len+1);

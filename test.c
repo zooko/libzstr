@@ -13,8 +13,12 @@ int test_czstr_manual()
 
 int test_czstr_union_cast_manual()
 {
-	zstr a = cs_as_z("abcdefgh");
-	czstr b = (union { zstr z; czstr c; }){a}.c;
+	zstr a;
+	czstr b;
+	union { zstr z; czstr c; } u;
+	a = cs_as_z("abcdefgh");
+	u.z = a;
+	b = u.c;
 	printf("%d:%s\n", b.len, b.buf);
 	return 0;
 }
@@ -42,8 +46,14 @@ int test_new_zstr_from_cs()
 
 int test_repr()
 {
+	zstr z2;
 	czstr z = cs_as_cz("k");
 	czstr rz = cz(repr(z));
+	#ifndef NDEBUG
+	const czstr a;
+	#endif
+
+
 	assert (!strcmp(rz.buf, "k"));
 
 	z = cs_as_cz("\\k");
@@ -57,7 +67,7 @@ int test_repr()
 	assert (!strcmp(rz.buf, "\\\\k"));
 	assert (z_eq(rz, a));
 
-	zstr z2 = new_z(4);
+	z2 = new_z(4);
 	z2.buf[0] = 1;
 	z2.buf[1] = 10;
 	z2.buf[2] = 100;

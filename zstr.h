@@ -62,12 +62,12 @@
 #ifndef _INCL_zstr_h
 #define _INCL_zstr_h
 
-static char const* const zstr_h_cvsid = "$Id: zstr.h,v 1.1 2002/02/10 20:57:46 zooko Exp $";
+static char const* const zstr_h_cvsid = "$Id: zstr.h,v 1.2 2002/10/27 20:18:03 zooko Exp $";
 
 static int const zstr_vermaj = 0;
 static int const zstr_vermin = 2;
-static int const zstr_vermicro = 0;
-static char const* const zstr_vernum = "0.2.0";
+static int const zstr_vermicro = 1;
+static char const* const zstr_vernum = "0.2.1";
 
 #include <stdlib.h>
 #include <string.h>
@@ -219,11 +219,14 @@ free_z(zstr z);
 #define CS_AS_Z(cs) ((zstr){ strlen(cs), cs };)
 #define CS_AS_CZ(cs) ((czstr){ strlen((cs)), (cs) };)
 /* Please avert your gaze.  We are now going to trick the compiler into converting a zstr directly into a czstr by dint of casting into a union and then taking its `czstr' element. */
-#define cz(z) ((union { zstr zs; czstr czs; }){ (z) }.czs)
 #define free_z(z) (free((void*)(z).buf))
 #endif /* #ifdef NDEBUG */
 
 #endif /* #ifndef _INCL_zstr_h */
+
+#if 0 /* Whoops this doesn't compile with gcc 2.95!  --Zooko 2002-10-27 */
+#define cz(z) ((union { zstr zs; czstr czs; }){ (z) }.czs)
+#endif /* Whoops this doesn't compile with gcc 2.95!  --Zooko 2002-10-27 */
 
 /**
  * Copyright (c) 2002 Bryce "Zooko" Wilcox-O'Hearn
