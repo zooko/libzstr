@@ -136,8 +136,6 @@ free_z(zstr z)
 {
 	assert (z.buf != NULL); /* @precondition z.buf must not be NULL. */
 	free(z.buf);
-	z.len = 0;
-	z.buf = NULL;
 }
 
 zstr
@@ -256,7 +254,7 @@ new_z_from_cs_and_len(const char*const cs, const size_t len)
 static const size_t BUFINCREMENT = 16384;
 
 zstr 
-z_from_stream(FILE* fp)
+z_slurp_stream(FILE* fp)
 {
 	size_t res, bufsiz, space, len;
 	zbyte* buf;
@@ -304,6 +302,54 @@ z_from_stream(FILE* fp)
 	return (zstr){ len, buf };
 }
 
+zstr
+z_decode(FILE* fp)
+{
+	size_t res;
+	zbyte* len;
+	zstr result;
+	assert(fp != NULL); /* @precondition */
+
+	len = (zbyte*)malloc(4);
+	CHECKMALLOCEXIT(len);
+	res = fread(len, 4, 1, fp);
+	runtime_assert(res == 1, "fread() failed to read the length.");
+	result.len = (size_t)uint32_decode(len);
+	free(len);
+	printf("result.len = %d\n", result.len);
+    result.buf = (zbyte*)malloc(result.len + 1);
+#ifdef Z_EXHAUST_EXIT
+    CHECKMALLOCEXIT(result.buf);
+#else
+    if (result.buf == NULL) {
+        result.len = 0;
+        return result;
+    }
+#endif
+	if(result.len > 0){
+		res = fread(result.buf, result.len, 1, fp);
+		runtime_assert(res == 1, "Failed to read all of the data.");
+		result.buf[result.len] = '\0';
+	}
+	return result;
+}	
+
+void
+z_encode(czstr cz, FILE* fp)
+{
+	size_t res;
+	zbyte* len;
+	assert(fp != NULL); /* @precondition */
+	
+	len = (zbyte*)malloc(4);
+	runtime_assert(len != NULL, "Memory exhaustion.");
+	uint32_encode(cz.len, len);
+	res = fwrite(len, sizeof(zbyte), 4, fp);
+	runtime_assert(res = 4, "fwrite() failed to completely write the data.");
+	res = fwrite(cz.buf, sizeof(zbyte), cz.len, fp);
+	runtime_assert(res = cz.len, "fwrite() failed to completely write the data.");
+}
+	
 void 
 cz_to_stream(const czstr cz, FILE* fp)
 {

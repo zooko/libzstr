@@ -63,12 +63,12 @@
 #ifndef _INCL_zstr_h
 #define _INCL_zstr_h
 
-static char const* const zstr_h_cvsid = "$Id: zstr.h,v 1.7 2004/02/03 21:06:04 zooko Exp $";
+static char const* const zstr_h_cvsid = "$Id: zstr.h,v 1.8 2004/02/06 23:54:11 zooko Exp $";
 
 static int const zstr_vermaj = 0;
 static int const zstr_vermin = 9;
-static int const zstr_vermicro = 6;
-static char const* const zstr_vernum = "0.9.6";
+static int const zstr_vermicro = 7;
+static char const* const zstr_vernum = "0.9.7";
 
 #include <stdlib.h>
 #include <string.h>
@@ -248,16 +248,33 @@ void
 free_z(zstr z);
 
 /**
- * Read from a stream (until EOF) into a zstr.  This does nothing with the fp 
- * argument except call fread(), feof(), and ferror() on it, therefore it reads 
- * from whereever fp is currently set to the end of fp.  It does not fclose() 
- * fp after it is done.
+ * Read all remaining data from a stream (until EOF) into a zstr.  This does 
+ * nothing with the fp argument except call fread(), feof(), and ferror() on it, 
+ * therefore it reads from whereever fp is currently set to the end of fp.  It 
+ * does not fclose() fp after it is done.
  *
  * This invokes realloc() multiple times as needed along the way.
  *
  * @precondition fp must not be NULL.
  */
-zstr z_from_stream(FILE* fp);
+zstr z_slurp_stream(FILE* fp);
+
+/**
+ * Read 4 byte length from a stream (until EOF) and store it in the len field of
+ * a newly-allocated zstr, then read leb bytes into the buf field.  This does
+ * nothing with the fp argument except call fread(), and ferror() on it,
+ * therefore it reads from whereever fp is currently set to the end of fp.  It
+ * does not fclose() fp after it is done.
+ *
+ * @precondition fp must not be NULL.
+ */
+zstr z_decode(FILE* fp);
+
+/**
+ * Takes a czstr and an open stream, encodes the len in big-endian format, writes
+ * that and buf to the stream.
+ */
+void z_encode(czstr cz, FILE* fp);
 
 /**
  * Write the contents of cz to a stream.  This just calls 

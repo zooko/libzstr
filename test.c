@@ -15,7 +15,7 @@ int test_czstr_union_cast_manual()
 {
 	zstr a;
 	czstr b;
-	union { zstr z; czstr c; } u;
+	z_union_zstr_czstr u;
 	a = cs_as_z("abcdefgh");
 	u.z = a;
 	b = u.c;
@@ -93,20 +93,36 @@ void test_stream()
 {
 	FILE* fp = fopen("/tmp/opsec.p12", "r");
 	FILE* fpo;
-	zstr z1 = z_from_stream(fp);
+	zstr z1 = z_slurp_stream(fp);
 	zstr z2;
 	fpo = fopen("/tmp/opsec.p12.out", "w");
 	cz_to_stream(cz(z1), fpo);
 	fflush(fpo);
 	fclose(fpo);
-	z2 = z_from_stream(fopen("/tmp/opsec.p12.out", "r"));
+	z2 = z_slurp_stream(fopen("/tmp/opsec.p12.out", "r"));
 	assert (zeq(cz(z1), cz(z2)));
+}
+
+void test_encode()
+{
+	FILE* fp;
+	czstr a = cs_as_cz("blah");
+	zstr b;
+	fp = fopen("/tmp/encode", "w");
+	/*printf("len = %d\n", a.len);*/
+	z_encode(a, fp);
+	fclose(fp);
+	fp = fopen("/tmp/encode", "r");
+	b = z_decode(fp);
+	fclose(fp);
+	printf("b.len = %d, b.buf = %s\n", b.len, b.buf);	
 }
 
 int main(int argv, char**argc)
 {
-	test_czstr();
+	/*test_czstr();*/
 	/*test_stream();*/
+	test_encode();
 	return test_repr();
 }
 
