@@ -61,7 +61,7 @@ int test_repr()
 	assert (rz.len == 3);
 	assert (a.len == 3);
 	assert (!strcmp(rz.buf, "\\\\k"));
-	assert (z_eq(rz, a));
+	assert (zeq(rz, a));
 
 	z2 = new_z(4);
 	z2.buf[0] = 1;

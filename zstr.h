@@ -26,7 +26,7 @@
  * arguments have side-effects those side-effects will occur more than once.  
  * For example, suppose that `zs' is an array of zstrs.  Then if you write:
  * int i = 0;
- * int eq = z_eq(zs[i++], zs[i++])
+ * int eq = zeq(zs[i++], zs[i++])
  * it will compare the first and second elements of the array, but if you write:
  * int i = 0;
  * int eq = Z_EQ(zs[i++], zs[i++])
@@ -63,12 +63,12 @@
 #ifndef _INCL_zstr_h
 #define _INCL_zstr_h
 
-static char const* const zstr_h_cvsid = "$Id: zstr.h,v 1.4 2003/12/13 17:56:00 zooko Exp $";
+static char const* const zstr_h_cvsid = "$Id: zstr.h,v 1.5 2003/12/14 18:44:53 zooko Exp $";
 
 static int const zstr_vermaj = 0;
 static int const zstr_vermin = 9;
-static int const zstr_vermicro = 1;
-static char const* const zstr_vernum = "0.9.1";
+static int const zstr_vermicro = 2;
+static char const* const zstr_vernum = "0.9.2";
 
 #include <stdlib.h>
 #include <string.h>
@@ -122,8 +122,7 @@ zdup(czstr z1);
  * @return the length of the zstr, in bytes, not counting the null terminating 
  *     character.
  *
- * Actually I recommend that you just write z.len yourself, which is faster 
- * and in my opinion clearer.
+ * Or you can just write "z.len".
  */
 size_t
 zstrlen(czstr z);
@@ -132,15 +131,15 @@ zstrlen(czstr z);
  * @return 1 if the strings are identical, else 0
  */
 int
-z_eq(czstr z1, czstr z2);
+zeq(czstr z1, czstr z2);
 int
-Z_EQ(czstr z1, czstr z2);
+ZEQ(czstr z1, czstr z2);
 
 /**
  * @return <0 if z1<z2, 0 if z1==z2, or >0 if z1>z2 (same as strcmp())
  */
 int
-z_cmp(czstr z1, czstr z2);
+zcmp(czstr z1, czstr z2);
 
 /**
  * The human-readable representation is: if a byte is a printable ASCII character other than `\', 
@@ -177,6 +176,14 @@ czstr
 cs_as_cz(const char* cs);
 czstr
 CS_AS_CZ(const char* cs);
+
+/**
+ * @return a cs pointing to a czstr's buffer.  (It could be NULL.)
+ */
+const char*
+cz_as_cs(czstr cz);
+const char*
+CZ_AS_CS(czstr cz);
 
 /**
  * @return a czstr of z (shallow copy).
@@ -239,6 +246,8 @@ free_z(zstr z);
 #define CS_AS_Z(cs) ((zstr){ strlen(cs), cs };)
 #define CS_AS_CZ(cs) ((czstr){ strlen((cs)), (cs) };)
 #define free_z(z) (free((void*)(z).buf))
+#define cz_as_cs(cz) ((const char*)(cz.buf))
+#define CZ_AS_CS(cz) ((const char*)(cz.buf))
 #endif /* #ifdef NDEBUG */
 
 #endif /* #ifndef _INCL_zstr_h */

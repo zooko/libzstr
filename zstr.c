@@ -58,7 +58,7 @@ size_t zstrlen(const czstr z)
 }
 
 int
-z_eq(const czstr z1, const czstr z2)
+zeq(const czstr z1, const czstr z2)
 {
 	return (z1.len==z2.len)&&(!memcmp(z1.buf, z2.buf, z1.len));
 }
@@ -71,7 +71,7 @@ Z_EQ(const czstr z1, const czstr z2)
 }
 
 int
-z_cmp(const czstr z1, const czstr z2)
+zcmp(const czstr z1, const czstr z2)
 {
 	int mcr = memcmp(z1.buf, z2.buf, MIN(z1.len, z2.len));
 	if (mcr)
@@ -109,14 +109,20 @@ repr(const czstr z)
 		} else {
 			*resp++ = '\\';
 			*resp++ = 'x';
-			sprintf(resp, "%02x", *zp++);
+			sprintf((char*)resp, "%02x", *zp++);
 			resp += 2;
 		}
 	}
 	result.len = resp - result.buf;
 	*resp = '\0';
 	newp = (zbyte*)realloc(result.buf, result.len+1);
-	assert (newp != NULL); /* I don't see how this realloc could have failed! */
+#ifdef Z_EXHAUST_EXIT
+	CHECKMALLOCEXIT(newp);
+#else
+	if (newp == NULL) {
+		return (zstr){ 0, NULL };
+	}
+#endif
 	result.buf = newp;
 	return result;
 }
@@ -133,7 +139,7 @@ zstr
 cs_as_z(char*const cs)
 {
 	assert (cs != NULL); /* @precondition */
-	return (zstr){ strlen(cs), cs };
+	return (zstr){ strlen(cs), (zbyte*)cs };
 }
 
 #undef CS_AS_Z
@@ -141,7 +147,14 @@ zstr
 CS_AS_Z(char*const cs)
 {
 	assert (cs != NULL); /* @precondition */
-	return (zstr){ strlen(cs), cs };
+	return (zstr){ strlen(cs), (zbyte*)cs };
+}
+
+czstr
+cs_as_cz(const char*const cs)
+{
+	assert (cs != NULL); /* @precondition */
+	return (czstr){ strlen(cs), (const zbyte*)cs };
 }
 
 #undef CS_AS_CZ
@@ -149,14 +162,21 @@ czstr
 CS_AS_CZ(const char*const cs)
 {
 	assert (cs != NULL); /* @precondition */
-	return (czstr){ strlen(cs), cs };
+	return (czstr){ strlen(cs), (const zbyte*)cs };
 }
 
-czstr
-cs_as_cz(const char*const cs)
+#undef cz_as_cs
+const char*
+cz_as_cs(const czstr cz)
 {
-	assert (cs != NULL); /* @precondition */
-	return (czstr){ strlen(cs), cs };
+	return (const char*)cz.buf;
+}
+
+#undef CZ_AS_CS
+const char*
+CZ_AS_CS(const czstr cz)
+{
+	return (const char*)cz.buf;
 }
 
 #undef cz
