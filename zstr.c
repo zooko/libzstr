@@ -19,9 +19,9 @@ zcat(zstr z1, const czstr z2)
 	}
 	if (z1.buf == NULL) {
 		assert (z1.len == 0);
-		p = (zbyte*)malloc(z2.len);
+		p = (zbyte*)malloc(z2.len+1);
 	} else {
-		p = (zbyte*)realloc(z1.buf, z1.len+z2.len);
+		p = (zbyte*)realloc(z1.buf, z1.len+z2.len+1);
 	}
 #ifdef Z_EXHAUST_EXIT
 	CHECKMALLOCEXIT(p);
@@ -41,7 +41,7 @@ zdup(const czstr z1)
 	if ((z1.len == 0) || (z1.buf == NULL)) {
 		return (zstr){ 0, NULL };
 	}
-	res.buf = (zbyte*)malloc(z1.len);
+	res.buf = (zbyte*)malloc(z1.len+1);
 #ifdef Z_EXHAUST_EXIT
 	CHECKMALLOCEXIT(res.buf);
 #else
@@ -49,7 +49,8 @@ zdup(const czstr z1)
 		return (zstr){ 0, NULL };
 	}
 #endif
-	memcpy(res.buf, z1.buf, z1.len);
+	memcpy(res.buf, z1.buf, z1.len+1);
+	res.len = z1.len;
 	return res;
 }
 
@@ -135,6 +136,8 @@ free_z(zstr z)
 {
 	assert (z.buf != NULL); /* @precondition z.buf must not be NULL. */
 	free(z.buf);
+	z.len = 0;
+	z.buf = NULL;
 }
 
 zstr
@@ -211,6 +214,7 @@ new_z_from_cs(const char*const cs)
 {
 	zstr result;
 	assert (cs != NULL); /* @precondition */
+	result.len = strlen(cs);
 
 	result.buf = (zbyte*)malloc(result.len+1);
 #ifdef Z_EXHAUST_EXIT
@@ -254,16 +258,14 @@ static const size_t BUFINCREMENT = 16384;
 zstr 
 z_from_stream(FILE* fp)
 {
-	size_t res;
-	size_t bufsiz;
-	size_t space;
+	size_t res, bufsiz, space, len;
 	zbyte* buf;
-	size_t len = 0;
 
+	len = 0;
 	assert (fp != NULL); /* @precondition */
 
 	bufsiz = BUFINCREMENT + 1;
-	buf = (zbyte*)malloc(sizeof(zbyte) * bufsiz);
+	buf = (zbyte*)malloc(bufsiz);
 #ifdef Z_EXHAUST_EXIT
 	CHECKMALLOCEXIT(buf);
 #else
@@ -276,7 +278,7 @@ z_from_stream(FILE* fp)
 		space = (bufsiz - 1) - len;
 		if (space < (BUFINCREMENT/2)) {
 			bufsiz += BUFINCREMENT;
-			buf = (zbyte*)realloc(buf, sizeof(zbyte) * bufsiz);
+			buf = (zbyte*)realloc(buf, bufsiz);
 #ifdef Z_EXHAUST_EXIT
 			CHECKMALLOCEXIT(buf);
 #else
@@ -290,7 +292,7 @@ z_from_stream(FILE* fp)
 		len += res;
 	}
 	assert(len < bufsiz); /* error internal to this function */
-	buf = (zbyte*)realloc(buf, sizeof(zbyte) * (len+1));
+	buf = (zbyte*)realloc(buf, len+1);
 #ifdef Z_EXHAUST_EXIT
 	CHECKMALLOCEXIT(buf);
 #else
@@ -303,11 +305,18 @@ z_from_stream(FILE* fp)
 }
 
 void 
-cz_to_stream(czstr cz, FILE* fp)
+cz_to_stream(const czstr cz, FILE* fp)
 {
 	size_t res;
 	assert (fp != NULL); /* @precondition */
 
 	res = fwrite(cz.buf, sizeof(zbyte), cz.len, fp);
 	runtime_assert(res == cz.len, "fwrite() failed to completely write the data.");
+}
+
+int cz_check(const czstr cz)
+{
+	runtime_assert((cz.len == 0) == ((cz.buf == NULL) || (cz.buf[0] == '\0')), "If cz.len is 0 then cz.buf is required to be either NULL or a pointer to an array of length 1 containing a null char.");
+	runtime_assert((cz.buf == NULL) || (strlen(cz.buf) <= cz.len), "If cz.buf is non-NULL then strlen(cz.buf) is required to be less than or equal to cz.len.");
+	return 1;
 }

@@ -27,6 +27,7 @@ int test_czstr()
 {
 	zstr a = cs_as_z("abcdefgh");
 	czstr b = cz(a);
+
 	printf("%d:%s\n", b.len, b.buf);
 	/*b.len = 5;*/ /* should be a compile error since b is const. */
 	/*b.buf = NULL;*/ /* should be a compile error since b is const. */
@@ -48,7 +49,7 @@ int test_repr()
 {
 	zstr z2;
 	czstr z = cs_as_cz("k");
-	czstr rz = cz(repr(z));
+	zstr rz = repr(z);
 	#ifndef NDEBUG
 	const czstr a = cs_as_cz("\\\\k");
 	#endif
@@ -57,11 +58,12 @@ int test_repr()
 
 	z = cs_as_cz("\\k");
 	assert (z.len == 2);
-	rz = cz(repr(z));
+	free_z(rz);
+	rz = repr(z);
 	assert (rz.len == 3);
 	assert (a.len == 3);
 	assert (!strcmp((const char*)rz.buf, "\\\\k"));
-	assert (zeq(rz, a));
+	assert (zeq(cz(rz), a));
 
 	z2 = new_z(4);
 	z2.buf[0] = 1;
@@ -69,15 +71,20 @@ int test_repr()
 	z2.buf[2] = 100;
 	z2.buf[3] = 252;
 
-	rz = cz(repr(cz(z2)));
+	free_z(rz);
+	rz = repr(cz(z2));
 	assert (!strcmp((const char*)rz.buf, "\\x01\\x0ad\\xfc"));
 
+	free_z(z2);
 	z2 = new_z(1);
 	z2.buf[0] = '\0';
 
-	rz = cz(repr(cz(z2)));
+	free_z(rz);
+	rz = repr(cz(z2));
 	assert (!strcmp((const char*)rz.buf, "\\x00"));
 
+	free_z(z2);
+	free_z(rz);
 	return 0;
 }
 

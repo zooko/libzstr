@@ -63,12 +63,12 @@
 #ifndef _INCL_zstr_h
 #define _INCL_zstr_h
 
-static char const* const zstr_h_cvsid = "$Id: zstr.h,v 1.6 2003/12/15 01:11:13 zooko Exp $";
+static char const* const zstr_h_cvsid = "$Id: zstr.h,v 1.7 2004/02/03 21:06:04 zooko Exp $";
 
 static int const zstr_vermaj = 0;
 static int const zstr_vermin = 9;
-static int const zstr_vermicro = 3;
-static char const* const zstr_vernum = "0.9.3";
+static int const zstr_vermicro = 6;
+static char const* const zstr_vernum = "0.9.6";
 
 #include <stdlib.h>
 #include <string.h>
@@ -77,11 +77,19 @@ static char const* const zstr_vernum = "0.9.3";
 #define Z_EXHAUST_EXIT
 #include "zutil.h" /* http://sf.net/projects/libzutil */
 
+/**
+ * A zstr is simply an unsigned int length and a pointer to a buffer of 
+ * unsigned chars.
+ */
 typedef struct {
 	size_t len; /* the length of the string (not counting the null-terminating character) */
 	zbyte* buf; /* pointer to the first byte */
 } zstr;
 
+/**
+ * A zstr is simply an unsigned int length and a pointer to a buffer of 
+ * const unsigned chars.
+ */
 typedef struct {
 	size_t len; /* the length of the string (not counting the null-terminating character) */
 	const zbyte* buf; /* pointer to the first byte */
@@ -240,10 +248,10 @@ void
 free_z(zstr z);
 
 /**
- * Read from a stream the into a zstr.  This does nothing with the fp argument 
- * except call fread(), feof(), and ferror() on it, therefore it reads from 
- * whereever fp is currently set to the end of fp, and it does not fclose() fp 
- * after it is done.
+ * Read from a stream (until EOF) into a zstr.  This does nothing with the fp 
+ * argument except call fread(), feof(), and ferror() on it, therefore it reads 
+ * from whereever fp is currently set to the end of fp.  It does not fclose() 
+ * fp after it is done.
  *
  * This invokes realloc() multiple times as needed along the way.
  *
@@ -259,7 +267,19 @@ zstr z_from_stream(FILE* fp);
  */
 void cz_to_stream(czstr cz, FILE* fp);
 
+/**
+ * A simple internal consistency check.  First, it verifies that cz.len is 0 
+ * only if cz.buf is NULL or if cz.buf contains a zero-length string (that is a 
+ * buffer of size 1 containing the null-terminating character).  Second, it 
+ * verifies that strlen(cz.buf) is always <= cz.len (which is true because since 
+ * we always append a null-terminating char).  If either of these aren't true 
+ * then it raises an error with runtime_assert().  Else, it returns 1.
+ */
+int cz_check(czstr cz);
+
 /*** macro definitions ***/
+
+typedef union { zstr z; czstr c; } z_union_zstr_czstr;
 
 #ifdef NDEBUG
 #define zstrlen(z) ((z).len)
@@ -269,14 +289,13 @@ void cz_to_stream(czstr cz, FILE* fp);
 #define free_z(z) (free((void*)(z).buf))
 #define cz_as_cs(cz) ((const char*)(cz.buf))
 #define CZ_AS_CS(cz) ((const char*)(cz.buf))
+/* Please avert your gaze.  We are now going to trick the compiler into converting a zstr directly into a czstr by dint of casting into a union and then taking its czstr element. */
+#define cz(z) ((z_union_zstr_czstr){ a }).c
+
 #endif /* #ifdef NDEBUG */
 
 #endif /* #ifndef _INCL_zstr_h */
 
-#if 0 /* Whoops this doesn't compile with gcc 2.95!  --Zooko 2002-10-27 */
-/* Please avert your gaze.  We are now going to trick the compiler into converting a zstr directly into a czstr by dint of casting into a union and then taking its czstr element. */
-#define cz(z) ((union { zstr zs; czstr czs; }){ (z) }.czs)
-#endif /* Whoops this doesn't compile with gcc 2.95!  --Zooko 2002-10-27 */
 
 /**
  * Copyright (c) 2002, 2003 Bryce "Zooko" Wilcox-O'Hearn
